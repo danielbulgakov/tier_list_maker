@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
     .tier { display: flex; align-items: center; margin-bottom: 5px; padding: 5px; border-radius: 5px; }
     .label { width: 50px; font-weight: bold; text-align: center; }
     .dropzone { flex: 1; display: flex; flex-wrap: wrap; min-height: 120px; padding: 5px; gap: 5px; background: white; border-radius: 5px; }
-    .item { width: 120px; height: 120px; background: #ccc; border-radius: 5px; background-size: cover; background-position: center; cursor: grab; }
+    .item { width: 148px; height: 370px; background: #ccc; border-radius: 5px; background-size: cover; background-position: center; cursor: grab; }
     .gallery { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 20px; }
     input[type=file], button { margin-bottom: 10px; }
   </style>
@@ -17,10 +17,10 @@
 
 <h2>Tier List Maker</h2>
 <input type="file" multiple accept="image/*" onchange="loadImages(event)">
-<button onclick="saveState()">💾 Save</button>
-<button onclick="loadState()">📥 Load</button>
-<button onclick="clearState()">🧹 Clear</button>
-<button onclick="exportToFile()">📤 Export</button>
+<button onclick="saveState()">📂 Save</button>
+<button onclick="loadState()">💾 Load</button>
+<button onclick="clearState()">🪩 Clear</button>
+<button onclick="exportToFile()">📄 Export</button>
 <button onclick="importFromFile()">📁 Import</button>
 <input type="file" id="importInput" accept="application/json" style="display:none" onchange="handleImport(event)">
 <div id="tiers"></div>
@@ -57,8 +57,10 @@ function createTiers() {
     dropzone.ondrop = e => {
       const id = e.dataTransfer.getData('text/plain');
       const el = document.getElementById(id);
-      dropzone.appendChild(el);
-      saveState();
+      if (!Array.from(dropzone.children).some(child => child.style.backgroundImage === el.style.backgroundImage)) {
+        dropzone.appendChild(el);
+        saveState();
+      }
     };
 
     row.appendChild(label);
@@ -71,14 +73,18 @@ function loadImages(event) {
   Array.from(event.target.files).forEach(file => {
     const reader = new FileReader();
     reader.onload = e => {
-      const div = document.createElement('div');
-      div.className = 'item';
-      div.id = 'item-' + Math.random().toString(36).substr(2, 9);
-      div.style.backgroundImage = `url(${e.target.result})`;
-      div.draggable = true;
-      div.ondragstart = ev => ev.dataTransfer.setData('text/plain', div.id);
-      galleryEl.appendChild(div);
-      saveState();
+      const imageUrl = e.target.result;
+      const exists = Array.from(galleryEl.children).some(div => div.style.backgroundImage.includes(imageUrl));
+      if (!exists) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.id = 'item-' + Math.random().toString(36).substr(2, 9);
+        div.style.backgroundImage = `url(${imageUrl})`;
+        div.draggable = true;
+        div.ondragstart = ev => ev.dataTransfer.setData('text/plain', div.id);
+        galleryEl.appendChild(div);
+        saveState();
+      }
     };
     reader.readAsDataURL(file);
   });
@@ -158,6 +164,224 @@ function handleImport(event) {
     localStorage.setItem('tierlist', JSON.stringify(state));
   };
   reader.readAsText(file);
+}
+
+createTiers();
+loadState();
+</script>
+
+</body>
+</html> -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Tier List Maker</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+    .tier { display: flex; align-items: center; margin-bottom: 5px; padding: 5px; border-radius: 5px; }
+    .label { width: 50px; font-weight: bold; text-align: center; }
+    .dropzone { flex: 1; display: flex; flex-wrap: wrap; min-height: 120px; padding: 5px; gap: 5px; background: white; border-radius: 5px; }
+    .item { width: 148px; height: 370px; background: #ccc; border-radius: 5px; background-size: cover; background-position: center; cursor: grab; }
+    .item.dragging { opacity: 0.5; }
+    .gallery { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 20px; }
+    input[type=file], button { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>Tier List Maker</h2>
+<input type="file" multiple accept="image/*" onchange="loadImages(event)" />
+<button onclick="saveState()">💾 Save</button>
+<button onclick="loadState()">💾 Load</button>
+<button onclick="clearState()">🧹 Clear</button>
+<button onclick="exportToFile()">📤 Export</button>
+<button onclick="importFromFile()">📁 Import</button>
+<input type="file" id="importInput" accept="application/json" style="display:none" onchange="handleImport(event)" />
+<div id="tiers"></div>
+<h3>Gallery</h3>
+<div class="gallery" id="gallery"></div>
+
+<script>
+const tierData = [
+  { label: 'S', color: '#ff6666' },
+  { label: 'A', color: '#ff9933' },
+  { label: 'B', color: '#ffff66' },
+  { label: 'C', color: '#99ff99' },
+  { label: 'D', color: '#cccccc' }
+];
+
+const tiersEl = document.getElementById('tiers');
+const galleryEl = document.getElementById('gallery');
+
+function createTiers() {
+  tiersEl.innerHTML = '';
+  tierData.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'tier';
+    row.style.background = t.color;
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = t.label;
+
+    const dropzone = document.createElement('div');
+    dropzone.className = 'dropzone';
+    dropzone.dataset.label = t.label;
+
+    dropzone.ondragover = e => e.preventDefault();
+
+    dropzone.ondrop = e => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain');
+      const draggedEl = document.getElementById(id);
+      if (!draggedEl) return;
+
+      // Не дублируем элемент если уже внутри этого dropzone
+      if (draggedEl.parentElement === dropzone) {
+        const afterElement = getDragAfterElement(dropzone, e.clientX);
+        if (afterElement == null) {
+          dropzone.appendChild(draggedEl);
+        } else {
+          dropzone.insertBefore(draggedEl, afterElement);
+        }
+      } else {
+        // Если из другого места, то просто добавляем
+        if (!Array.from(dropzone.children).some(child => child.style.backgroundImage === draggedEl.style.backgroundImage)) {
+          dropzone.appendChild(draggedEl);
+        }
+      }
+      saveState();
+    };
+
+    row.appendChild(label);
+    row.appendChild(dropzone);
+    tiersEl.appendChild(row);
+  });
+}
+
+function loadImages(event) {
+  Array.from(event.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const imageUrl = e.target.result;
+      const exists = Array.from(galleryEl.children).some(div => div.style.backgroundImage.includes(imageUrl));
+      if (!exists) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.id = 'item-' + Math.random().toString(36).substr(2, 9);
+        div.style.backgroundImage = `url(${imageUrl})`;
+        div.draggable = true;
+        div.ondragstart = ev => {
+          ev.dataTransfer.setData('text/plain', div.id);
+          div.classList.add('dragging');
+        };
+        div.ondragend = ev => {
+          div.classList.remove('dragging');
+        };
+        galleryEl.appendChild(div);
+        saveState();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function saveState() {
+  const state = {
+    gallery: Array.from(galleryEl.children).map(div => div.style.backgroundImage),
+    tiers: {}
+  };
+  document.querySelectorAll('.dropzone').forEach(zone => {
+    const label = zone.dataset.label;
+    state.tiers[label] = Array.from(zone.children).map(div => div.style.backgroundImage);
+  });
+  localStorage.setItem('tierlist', JSON.stringify(state));
+}
+
+function loadState() {
+  const state = JSON.parse(localStorage.getItem('tierlist'));
+  if (!state) return;
+  renderFromState(state);
+}
+
+function clearState() {
+  localStorage.removeItem('tierlist');
+  galleryEl.innerHTML = '';
+  document.querySelectorAll('.dropzone').forEach(zone => zone.innerHTML = '');
+}
+
+function createItem(bg) {
+  const div = document.createElement('div');
+  div.className = 'item';
+  div.id = 'item-' + Math.random().toString(36).substr(2, 9);
+  div.style.backgroundImage = bg;
+  div.draggable = true;
+  div.ondragstart = ev => {
+    ev.dataTransfer.setData('text/plain', div.id);
+    div.classList.add('dragging');
+  };
+  div.ondragend = ev => {
+    div.classList.remove('dragging');
+  };
+  return div;
+}
+
+function renderFromState(state) {
+  galleryEl.innerHTML = '';
+  document.querySelectorAll('.dropzone').forEach(zone => zone.innerHTML = '');
+  state.gallery.forEach(bg => galleryEl.appendChild(createItem(bg)));
+  for (const [label, imgs] of Object.entries(state.tiers)) {
+    const zone = document.querySelector(`.dropzone[data-label="${label}"]`);
+    imgs.forEach(bg => zone.appendChild(createItem(bg)));
+  }
+}
+
+function exportToFile() {
+  const state = {
+    gallery: Array.from(galleryEl.children).map(div => div.style.backgroundImage),
+    tiers: {}
+  };
+  document.querySelectorAll('.dropzone').forEach(zone => {
+    const label = zone.dataset.label;
+    state.tiers[label] = Array.from(zone.children).map(div => div.style.backgroundImage);
+  });
+  const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'tierlist.json';
+  link.click();
+}
+
+function importFromFile() {
+  document.getElementById('importInput').click();
+}
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const state = JSON.parse(e.target.result);
+    renderFromState(state);
+    localStorage.setItem('tierlist', JSON.stringify(state));
+  };
+  reader.readAsText(file);
+}
+
+// Функция для определения куда вставлять перетаскиваемый элемент
+function getDragAfterElement(container, x) {
+  const draggableElements = [...container.querySelectorAll('.item:not(.dragging)')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = x - box.left - box.width / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 createTiers();
