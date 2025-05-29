@@ -1,95 +1,168 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tier List Maker</title>
     <style>
+        html {
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+        }
+
         body {
             font-family: sans-serif;
-            margin: 20px;
+            margin: 1.25rem;
             background: #f5f5f5;
+        }
+
+        h2,
+        h3 {
+            margin-bottom: 1rem;
         }
 
         .tier {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
-            padding: 5px;
-            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
         }
 
         .label {
-            width: 50px;
+            width: 3rem;
             font-weight: bold;
             text-align: center;
+            font-size: 1.2rem;
         }
 
         .dropzone {
             flex: 1;
             display: flex;
             flex-wrap: wrap;
-            min-height: 120px;
-            padding: 5px;
-            gap: 5px;
+            min-height: 3rem;
+            /* уменьшенная высота для пустых */
+            padding: 0.25rem;
+            gap: 0.5rem;
             background: white;
-            border-radius: 5px;
+            border-radius: 0.5rem;
+            transition: min-height 0.3s ease;
         }
 
         .item {
-            width: 148px;
-            height: 370px;
-            background: #ccc;
-            border-radius: 5px;
-            background-size: cover;
+            flex: 0 0 clamp(4rem, 10vw, 6rem);
+            height: clamp(6rem, 15vh, 12rem);
+            background: #ffffff00;
+            border-radius: 0.5rem;
+            background-size: contain;
+            background-repeat: no-repeat;
             background-position: center;
             cursor: grab;
         }
 
-            .item.dragging {
-                opacity: 0.5;
-            }
+        .item.dragging {
+            opacity: 0.5;
+        }
 
         .gallery {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 20px;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            justify-content: center;
         }
 
-        input[type=file], button {
-            margin-bottom: 10px;
+        input[type="file"] {
+            margin-bottom: 0.625rem;
+            font-size: 1rem;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 0.5rem 0.75rem;
+            margin: 0.2rem;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .button:hover {
+            background: #d0d0d0;
+        }
+
+        .button:focus {
+            outline: 2px solid #888;
+        }
+
+        .button-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .button-danger:hover {
+            background: #c0392b;
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         .item.selected {
-            outline: 4px solid red;
+            outline: 0.25rem solid red;
+        }
+
+        /* Тень под тир-листы */
+        .tier {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Тень под кнопки */
+        .button {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* При наведении — чуть сильнее */
+        .button:hover {
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Особая тень для "опасной" кнопки */
+        .button-danger {
+            box-shadow: 0 2px 6px rgba(231, 76, 60, 0.4);
+        }
+        .button-danger:hover {
+            box-shadow: 0 3px 8px rgba(192, 57, 43, 0.5);
         }
     </style>
 </head>
+
 <body>
 
     <h2>Tier List Maker</h2>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
         <div>
             <input type="file" multiple accept="image/*" onchange="loadImages(event)" />
-            <button onclick="saveState()">💾 Save</button>
-            <button onclick="loadState()">📥 Load</button>
-            <button onclick="clearState()">🧹 Clear</button>
-            <button onclick="exportToFile()">📤 Export</button>
-            <button onclick="importFromFile()">📁 Import</button>
-            <input type="file" id="importInput" accept="application/json" style="display:none" onchange="handleImport(event)" />
+            <button class="button" onclick="saveState()">💾 Save</button>
+            <button class="button" onclick="loadState()">📥 Load</button>
+            <button class="button" onclick="clearState()">🧹 Clear</button>
+            <button class="button" onclick="exportToFile()">📤 Export</button>
+            <button class="button" onclick="importFromFile()">📁 Import</button>
+            <input type="file" id="importInput" accept="application/json" class="hidden"
+                onchange="handleImport(event)" />
         </div>
-        <button id="deleteButton" onclick="deleteSelectedItem()" style="
-    display: none;
-    background: red;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-  ">
-            ❌ Delete selected
-        </button>
+        <button id="deleteButton" class="button button-danger hidden" onclick="deleteSelectedItems()">❌ Delete
+            selected</button>
     </div>
 
     <div id="tiers"></div>
@@ -107,7 +180,8 @@
 
         const tiersEl = document.getElementById('tiers');
         const galleryEl = document.getElementById('gallery');
-        let selectedItem = null;
+        const deleteBtn = document.getElementById('deleteButton');
+        let selectedItems = new Set();
 
         function createTiers() {
             tiersEl.innerHTML = '';
@@ -125,7 +199,6 @@
                 dropzone.dataset.label = t.label;
 
                 dropzone.ondragover = e => e.preventDefault();
-
                 dropzone.ondrop = e => {
                     e.preventDefault();
                     const id = e.dataTransfer.getData('text/plain');
@@ -134,17 +207,13 @@
 
                     if (draggedEl.parentElement === dropzone) {
                         const afterElement = getDragAfterElement(dropzone, e.clientX);
-                        if (afterElement == null) {
-                            dropzone.appendChild(draggedEl);
-                        } else {
-                            dropzone.insertBefore(draggedEl, afterElement);
-                        }
+                        afterElement ? dropzone.insertBefore(draggedEl, afterElement) : dropzone.appendChild(draggedEl);
                     } else {
-                        if (!Array.from(dropzone.children).some(child => child.style.backgroundImage === draggedEl.style.backgroundImage)) {
-                            dropzone.appendChild(draggedEl);
-                        }
+                        const exists = Array.from(dropzone.children).some(child => child.style.backgroundImage === draggedEl.style.backgroundImage);
+                        if (!exists) dropzone.appendChild(draggedEl);
                     }
                     saveState();
+                    updateDropzoneHeight();
                 };
 
                 row.appendChild(label);
@@ -163,6 +232,7 @@
                         const div = createItem(`url(${imageUrl})`);
                         galleryEl.appendChild(div);
                         saveState();
+                        updateDropzoneHeight();
                     }
                 };
                 reader.readAsDataURL(file);
@@ -180,33 +250,78 @@
                 ev.dataTransfer.setData('text/plain', div.id);
                 div.classList.add('dragging');
             };
-            div.ondragend = ev => {
+            div.ondragend = () => {
                 div.classList.remove('dragging');
             };
-            div.onclick = () => {
-                if (selectedItem && selectedItem !== div) {
-                    selectedItem.classList.remove('selected');
-                }
-                if (div.classList.contains('selected')) {
-                    div.classList.remove('selected');
-                    selectedItem = null;
-                    document.getElementById('deleteButton').style.display = 'none';
-                } else {
-                    div.classList.add('selected');
-                    selectedItem = div;
-                    document.getElementById('deleteButton').style.display = 'inline-block';
-                }
+            div.onclick = (event) => {
+                event.stopPropagation();
+                handleSelection(div, event);
             };
             return div;
         }
 
-        function deleteSelectedItem() {
-            if (selectedItem) {
-                selectedItem.remove();
-                selectedItem = null;
-                document.getElementById('deleteButton').style.display = 'none';
-                saveState();
+        // Перетаскивание из тир-листа обратно в галерею
+        galleryEl.ondragover = e => e.preventDefault();
+        galleryEl.ondrop = e => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const draggedEl = document.getElementById(id);
+            if (!draggedEl) return;
+
+            if (draggedEl.parentElement === galleryEl) {
+                const afterElement = getDragAfterElement(galleryEl, e.clientX);
+                afterElement ? galleryEl.insertBefore(draggedEl, afterElement) : galleryEl.appendChild(draggedEl);
+            } else {
+                // Если элемента с таким фоном нет, добавляем в галерею
+                const exists = Array.from(galleryEl.children).some(child => child.style.backgroundImage === draggedEl.style.backgroundImage);
+                if (!exists) galleryEl.appendChild(draggedEl);
             }
+            saveState();
+            updateDropzoneHeight();
+        };
+
+        function handleSelection(div, event) {
+            const items = Array.from(document.querySelectorAll('.item'));
+            const clickedIndex = items.indexOf(div);
+
+            if (!event.shiftKey) {
+                clearSelection();
+                selectItem(div);
+            } else {
+                if (selectedItems.has(div)) {
+                    deselectItem(div);
+                } else {
+                    selectItem(div);
+                }
+            }
+            updateDeleteButton();
+        }
+
+        function selectItem(div) {
+            div.classList.add('selected');
+            selectedItems.add(div);
+        }
+
+        function deselectItem(div) {
+            div.classList.remove('selected');
+            selectedItems.delete(div);
+        }
+
+        function clearSelection() {
+            selectedItems.forEach(div => div.classList.remove('selected'));
+            selectedItems.clear();
+        }
+
+        function updateDeleteButton() {
+            deleteBtn.classList.toggle('hidden', selectedItems.size === 0);
+        }
+
+        function deleteSelectedItems() {
+            selectedItems.forEach(div => div.remove());
+            selectedItems.clear();
+            updateDeleteButton();
+            saveState();
+            updateDropzoneHeight();
         }
 
         function saveState() {
@@ -225,14 +340,16 @@
             const state = JSON.parse(localStorage.getItem('tierlist'));
             if (!state) return;
             renderFromState(state);
+            updateDropzoneHeight();
         }
 
         function clearState() {
             localStorage.removeItem('tierlist');
             galleryEl.innerHTML = '';
             document.querySelectorAll('.dropzone').forEach(zone => zone.innerHTML = '');
-            selectedItem = null;
-            document.getElementById('deleteButton').style.display = 'none';
+            clearSelection();
+            updateDeleteButton();
+            updateDropzoneHeight();
         }
 
         function renderFromState(state) {
@@ -243,6 +360,9 @@
                 const zone = document.querySelector(`.dropzone[data-label="${label}"]`);
                 imgs.forEach(bg => zone.appendChild(createItem(bg)));
             }
+            clearSelection();
+            updateDeleteButton();
+            updateDropzoneHeight();
         }
 
         function exportToFile() {
@@ -273,6 +393,7 @@
                 const state = JSON.parse(e.target.result);
                 renderFromState(state);
                 localStorage.setItem('tierlist', JSON.stringify(state));
+                updateDropzoneHeight();
             };
             reader.readAsText(file);
         }
@@ -282,17 +403,25 @@
             return draggableElements.reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
                 const offset = x - box.left - box.width / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
+                return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
+        function updateDropzoneHeight() {
+            document.querySelectorAll('.dropzone').forEach(zone => {
+                zone.style.minHeight = zone.children.length === 0 ? '3rem' : 'auto';
+            });
+        }
+
+        document.body.onclick = () => {
+            clearSelection();
+            updateDeleteButton();
+        };
+
         createTiers();
         loadState();
+        updateDropzoneHeight();
     </script>
-
 </body>
+
 </html>
